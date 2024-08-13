@@ -1,16 +1,24 @@
 version: '3.8'
 
 services:
-  psql:
-    image: postgres:latest
+  flyway:
+    image: flyway/flyway:latest
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${DB_PORT}:5432"
+    - DB_USERNAME=${DB_USERNAME}
+    - DB_PASSWORD=${DB_PASSWORD}
+    - DB_DATABASE=${DB_DATABASE}
+    command: -configFiles=/flyway/conf/flyway.config -locations=filesystem:/flyway/sql -connectRetries=60 migrate
     volumes:
-      - psql_volume:/var/lib/postgresql/data
-
-volumes:
-  psql_volume:
+      - ${PWD}/db_migrations:/flyway/sql
+      - ${PWD}/docker-flyway.config:/flyway/conf/flyway.config
+    depends_on:
+      - postgres
+  postgres:
+    image: postgres:latest
+    restart: always
+    ports:
+    - "${DB_PORT}:${DB_PORT}"
+    environment:
+    - POSTGRES_USER=${DB_USERNAME}
+    - POSTGRES_PASSWORD=${DB_PASSWORD}
+    - POSTGRES_DB=${DB_DATABASE}
